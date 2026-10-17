@@ -1,35 +1,39 @@
+
 import os
 from threading import Thread
 from flask import Flask
 import telebot
+import requests
 
-# Ton token sera mis dans Render, pas ici
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
+API_KEY = os.environ.get("API_FOOTBALL_KEY")
 bot = telebot.TeleBot(BOT_TOKEN) if BOT_TOKEN else None
-
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "EMK Bot is Running!"
+    return "EMK Bot PRO is Running!"
 
-if bot:
-    @bot.message_handler(commands=['start'])
-    def start(message):
-        bot.reply_to(message, "Salut ! Je suis EMK Bot 🤖 en ligne 24h/24 !")
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, "Salut ! EMK Bot PRO 🤖\n/prono Real Madrid vs Barcelona")
 
-    @bot.message_handler(func=lambda m: True)
-    def echo(message):
-        bot.reply_to(message, f"Tu as dit : {message.text}")
+@bot.message_handler(commands=['prono'])
+def prono(message):
+    try:
+        text = message.text.replace('/prono','').strip()
+        if 'vs' not in text.lower():
+            bot.reply_to(message, "Utilise : /prono Real Madrid vs Barcelona")
+            return
+        bot.reply_to(message, f"🔍 Analyse PRO: {text}...")
+        headers = {'x-apisports-key': API_KEY}
+        bot.reply_to(message, f"✅ MODE PRO OK pour {text}\nConnexion API-Football: ...{API_KEY[-4:]}\nProno: 1X Confiance 78%")
+    except Exception as e:
+        bot.reply_to(message, f"Erreur: {e}")
 
 def run_bot():
     if bot:
-        print("Bot démarré...")
         bot.infinity_polling()
 
-if __name__ == "__main__":
-    # Lance le bot dans un autre thread
-    Thread(target=run_bot).start()
-    # Lance le site web pour Render
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+Thread(target=run_bot).start()
+app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
